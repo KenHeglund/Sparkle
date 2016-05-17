@@ -555,13 +555,48 @@
         pathToRelaunch = [updaterDelegate pathToRelaunchForUpdater:self.updater];
     }
     
-    [NSTask launchedTaskWithLaunchPath:relaunchToolPath arguments:@[[self.host bundlePath],
-                                                                    pathToRelaunch,
-                                                                    [NSString stringWithFormat:@"%d", [[NSProcessInfo processInfo] processIdentifier]],
-                                                                    self.tempDir,
-                                                                    relaunch ? @"1" : @"0",
-                                                                    showUI ? @"1" : @"0"]];
-    [self terminateApp];
+    if ( [ updaterDelegate respondsToSelector:@selector(updater:shouldRelaunchHostAfterUpdate:)] ) {
+        relaunch = [updaterDelegate updater:self.updater shouldRelaunchHostAfterUpdate:self.updateItem];
+    }
+    
+    if ( [self.updater.delegate respondsToSelector:@selector(updater:shouldShowInstallUIForUpdate:)] ) {
+        showUI = [self.updater.delegate updater:self.updater shouldShowInstallUIForUpdate:self.updateItem];
+    }
+    
+    BOOL shouldTerminateHost = YES;
+    if ( [updaterDelegate respondsToSelector:@selector(updater:shouldTerminateHostForUpdate:)] ) {
+        shouldTerminateHost = [updaterDelegate updater:self.updater shouldTerminateHostForUpdate:self.updateItem];
+    }
+    
+    NSArray *arguments = @[
+        [self.host bundlePath],
+        pathToRelaunch,
+        [NSString stringWithFormat:@"%d", [[NSProcessInfo processInfo] processIdentifier]],
+        self.tempDir,
+        relaunch ? @"1" : @"0",
+        showUI ? @"1" : @"0",
+        shouldTerminateHost ? @"1" : @"0",
+    ];
+    
+    NSTask *task = [[NSTask alloc] init];
+    task.launchPath = relaunchToolPath;
+    task.arguments = arguments;
+    
+    if ( !shouldTerminateHost ) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(relaunchToolTaskDidTerminate:) name:NSTaskDidTerminateNotification object:task];
+    }
+    
+    [task launch];
+    
+    if ( shouldTerminateHost ) {
+        [self terminateApp];
+    }
+}
+
+- (void)relaunchToolTaskDidTerminate:(NSNotification *)notification {
+    // Terminating the update task without terminating the host is interpreted as an abandoned update
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NSTaskDidTerminateNotification object:notification.object];
+    [self abortUpdate];
 }
 
 // Note: this is overridden by the automatic update driver to not terminate in some cases

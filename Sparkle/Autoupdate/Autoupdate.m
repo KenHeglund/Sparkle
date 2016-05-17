@@ -86,8 +86,9 @@ static const NSTimeInterval SUTerminationTimeDelay = 0.5;
  * updateFolderPath - path to update folder (i.e, temporary directory containing the new update)
  * shouldRelaunch - indicates if the new installed app should re-launched
  * shouldShowUI - indicates if we should show the status window when installing the update
+ * shouldWaitForHostToTerminate - indicates if we should wait for the host to terminate before initiating the update
  */
-- (instancetype)initWithHostPath:(NSString *)hostPath relaunchPath:(NSString *)relaunchPath parentProcessId:(pid_t)parentProcessId updateFolderPath:(NSString *)updateFolderPath shouldRelaunch:(BOOL)shouldRelaunch shouldShowUI:(BOOL)shouldShowUI;
+- (instancetype)initWithHostPath:(NSString *)hostPath relaunchPath:(NSString *)relaunchPath parentProcessId:(pid_t)parentProcessId updateFolderPath:(NSString *)updateFolderPath shouldRelaunch:(BOOL)shouldRelaunch shouldShowUI:(BOOL)shouldShowUI shouldWaitForHostToTerminate:(BOOL)shouldWaitForHostToTerminate;
 
 @end
 
@@ -101,6 +102,7 @@ static const NSTimeInterval SUTerminationTimeDelay = 0.5;
 @property (nonatomic, copy) NSString *relaunchPath;
 @property (nonatomic, assign) BOOL shouldRelaunch;
 @property (nonatomic, assign) BOOL shouldShowUI;
+@property (nonatomic, assign) BOOL shouldWaitForHostToTerminate;
 
 @property (nonatomic, assign) BOOL isTerminating;
 
@@ -115,9 +117,10 @@ static const NSTimeInterval SUTerminationTimeDelay = 0.5;
 @synthesize relaunchPath = _relaunchPath;
 @synthesize shouldRelaunch = _shouldRelaunch;
 @synthesize shouldShowUI = _shouldShowUI;
+@synthesize shouldWaitForHostToTerminate = _shouldWaitForHostToTerminate;
 @synthesize isTerminating = _isTerminating;
 
-- (instancetype)initWithHostPath:(NSString *)hostPath relaunchPath:(NSString *)relaunchPath parentProcessId:(pid_t)parentProcessId updateFolderPath:(NSString *)updateFolderPath shouldRelaunch:(BOOL)shouldRelaunch shouldShowUI:(BOOL)shouldShowUI
+- (instancetype)initWithHostPath:(NSString *)hostPath relaunchPath:(NSString *)relaunchPath parentProcessId:(pid_t)parentProcessId updateFolderPath:(NSString *)updateFolderPath shouldRelaunch:(BOOL)shouldRelaunch shouldShowUI:(BOOL)shouldShowUI shouldWaitForHostToTerminate:(BOOL)shouldWaitForHostToTerminate
 {
     if (!(self = [super init])) {
         return nil;
@@ -129,13 +132,14 @@ static const NSTimeInterval SUTerminationTimeDelay = 0.5;
     self.updateFolderPath = updateFolderPath;
     self.shouldRelaunch = shouldRelaunch;
     self.shouldShowUI = shouldShowUI;
+    self.shouldWaitForHostToTerminate = shouldWaitForHostToTerminate;
     
     return self;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification __unused *)notification
 {
-    [self.terminationListener startListeningWithCompletion:^{
+    void (^beginInstallation)() = ^{
         self.terminationListener = nil;
 		
         if (self.shouldShowUI) {
@@ -149,7 +153,14 @@ static const NSTimeInterval SUTerminationTimeDelay = 0.5;
         }
         
         [self install];
-    }];
+    };
+    
+    if ( self.shouldWaitForHostToTerminate ) {
+        [self.terminationListener startListeningWithCompletion:beginInstallation];
+    }
+    else {
+        beginInstallation();
+    }
 }
 
 - (void)install
@@ -241,7 +252,7 @@ int main(int __unused argc, const char __unused *argv[])
     @autoreleasepool
     {
         NSArray *args = [[NSProcessInfo processInfo] arguments];
-        if (args.count < 5 || args.count > 7) {
+        if (args.count < 5 || args.count > 8) {
             return EXIT_FAILURE;
         }
         
@@ -252,12 +263,15 @@ int main(int __unused argc, const char __unused *argv[])
             [application activateIgnoringOtherApps:YES];
         }
         
+        BOOL shouldWaitForHostToTerminate = (args.count > 7) ? [[args objectAtIndex:7] boolValue] : YES;
+        
         AppInstaller *appInstaller = [[AppInstaller alloc] initWithHostPath:[args objectAtIndex:1]
                                                                relaunchPath:[args objectAtIndex:2]
                                                             parentProcessId:[[args objectAtIndex:3] intValue]
                                                            updateFolderPath:[args objectAtIndex:4]
                                                              shouldRelaunch:(args.count > 5) ? [[args objectAtIndex:5] boolValue] : YES
-                                                               shouldShowUI:shouldShowUI];
+                                                               shouldShowUI:shouldShowUI
+                                               shouldWaitForHostToTerminate:shouldWaitForHostToTerminate];
         [application setDelegate:appInstaller];
         [application run];
     }
