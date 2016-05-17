@@ -551,16 +551,16 @@
     }
 
     NSString *pathToRelaunch = [self.host bundlePath];
-    if ([updaterDelegate respondsToSelector:@selector(pathToRelaunchForUpdater:)]) {
+    if ( [updaterDelegate respondsToSelector:@selector(pathToRelaunchForUpdater:)] ) {
         pathToRelaunch = [updaterDelegate pathToRelaunchForUpdater:self.updater];
     }
     
-    if ( [ updaterDelegate respondsToSelector:@selector(updater:shouldRelaunchHostAfterUpdate:)] ) {
+    if ( [updaterDelegate respondsToSelector:@selector(updater:shouldRelaunchHostAfterUpdate:)] ) {
         relaunch = [updaterDelegate updater:self.updater shouldRelaunchHostAfterUpdate:self.updateItem];
     }
     
-    if ( [self.updater.delegate respondsToSelector:@selector(updater:shouldShowInstallUIForUpdate:)] ) {
-        showUI = [self.updater.delegate updater:self.updater shouldShowInstallUIForUpdate:self.updateItem];
+    if ( [updaterDelegate respondsToSelector:@selector(updater:shouldShowInstallUIForUpdate:)] ) {
+        showUI = [updaterDelegate updater:self.updater shouldShowInstallUIForUpdate:self.updateItem];
     }
     
     BOOL shouldTerminateHost = YES;
