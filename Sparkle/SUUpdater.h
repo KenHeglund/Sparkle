@@ -230,30 +230,6 @@ SU_EXPORT @interface SUUpdater : NSObject
  */
 @property (readonly) BOOL updateInProgress;
 
-/*!
-    Returns whether the Sparkle framework should terminate the host application.
- 
-    \param updater The SUUpdater instance.
-    \param update The appcast item that will be installed.
- */
-- (BOOL)updater:(SUUpdater *)updater shouldTerminateHostForUpdate:(SUAppcastItem *)update;
-
-/*!
-    Returns whether the Autoupdate UI should be displayed.
- 
-    \param updater The SUUpdater instance.
-    \param update The appcast item that will be installed.
- */
-- (BOOL)updater:(SUUpdater *)updater shouldShowInstallUIForUpdate:(SUAppcastItem *)update;
-
-/*!
-    Returns whether the host should be relaunched after the update.
- 
-    \param updater The SUUpdater instance.
-    \param update The appcast item that will be installed.
- */
-- (BOOL)updater:(SUUpdater *)updater shouldRelaunchHostAfterUpdate:(SUAppcastItem *)update;
-
 @end
 
 #endif
