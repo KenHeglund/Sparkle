@@ -5,6 +5,24 @@
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Script"
+               scriptText = "#!/bin/bash&#10;#env &gt; ~/Desktop/SparkleEnv.txt&#10;&#10;SOURCE_FILE=&quot;$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME&quot;&#10;DEST_FOLDER=&quot;$BUILT_PRODUCTS_DIR/../Latest&quot;&#10;&#10;if [ ! -d &quot;$DEST_FOLDER&quot; ]; then&#10;    mkdir &quot;$DEST_FOLDER&quot;&#10;elif [ -e &quot;$DEST_FOLDER/$FULL_PRODUCT_NAME&quot; ]; then&#10;    rm -rf &quot;$DEST_FOLDER/$FULL_PRODUCT_NAME&quot;&#10;fi&#10;&#10;cp -R &quot;$SOURCE_FILE&quot; &quot;$DEST_FOLDER&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "8DC2EF4F0486A6940098B216"
+                     BuildableName = "Sparkle.framework"
+                     BlueprintName = "Sparkle"
+                     ReferencedContainer = "container:Sparkle.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -52,7 +70,7 @@
       </AdditionalOptions>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       selectedDebuggerIdentifier = ""
       selectedLauncherIdentifier = "Xcode.IDEFoundation.Launcher.PosixSpawn"
       launchStyle = "0"
